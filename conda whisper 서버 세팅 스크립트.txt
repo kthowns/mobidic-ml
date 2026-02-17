@@ -1,0 +1,6 @@
+conda create -n whisper-env python=3.10 -y
+conda activate whisper-env
+conda install pytorch torchvision torchaudio cpuonly -c pytorch
+pip install openai-whisper
+conda install -c conda-forge ffmpeg
+pip install flask
