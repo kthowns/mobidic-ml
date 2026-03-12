@@ -21,7 +21,7 @@ ENV WHISPER_CACHE_DIR=/models
 RUN mkdir -p /models
 
 # preload
-RUN python -c "import whisper; whisper.load_model('tiny', download_root='/models')"
+RUN python -c "import whisper; whisper.load_model('tiny.en', download_root='/models')"
 
 COPY flask_app.py .
 

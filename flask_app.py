@@ -8,7 +8,7 @@ app = Flask(__name__)
 # -----------------------------
 # model load (container start 1회)
 # -----------------------------
-MODEL_NAME = "tiny"
+MODEL_NAME = "tiny.en"
 MODEL_PATH = "/models"
 
 model = whisper.load_model(
