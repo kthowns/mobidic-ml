@@ -16,13 +16,13 @@ model = whisper.load_model(
     download_root=MODEL_PATH
 )
 
-UPLOAD_DIR = "/tmp"  # tmpfs 사용 (디스크 누수 방지)
+UPLOAD_DIR = "/tmp"
 
 
-def transcribe_audio(audio_path):
+def transcribe_audio(audio_path: str) -> str:
     result = model.transcribe(
         audio_path,
-        fp16=False # CPU 환경 필수
+        fp16=False  # CPU 필수
     )
     return result["text"]
 
@@ -46,7 +46,6 @@ def transcribe():
     try:
         file.save(audio_path)
 
-        # 단일 CPU 환경 → 직렬 처리 최적
         text = transcribe_audio(audio_path)
 
         return jsonify({"result": text}), 200
