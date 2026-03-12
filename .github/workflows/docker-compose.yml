@@ -1,0 +1,13 @@
+services:
+  mobidic-whisper:
+    image: ${DOCKERHUB_USERNAME}/${IMAGE_NAME}:latest # 빌드 대신 이미지 사용
+    container_name: mobidic-whisper
+    restart: always
+    ports:
+      - "5000:5000"
+    mem_limit: 800m
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

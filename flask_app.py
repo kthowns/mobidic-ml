@@ -2,38 +2,63 @@ from flask import Flask, request, jsonify
 import uuid
 import whisper
 import os
-from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
-model = whisper.load_model("tiny.en")
-executor = ThreadPoolExecutor(max_workers=4)  # 쓰레드 4개
+
+# -----------------------------
+# model load (container start 1회)
+# -----------------------------
+MODEL_NAME = "tiny"
+MODEL_PATH = "/models"
+
+model = whisper.load_model(
+    MODEL_NAME,
+    download_root=MODEL_PATH
+)
+
+UPLOAD_DIR = "/tmp"  # tmpfs 사용 (디스크 누수 방지)
+
 
 def transcribe_audio(audio_path):
-    result = model.transcribe(audio_path)
-    return result['text']
+    result = model.transcribe(
+        audio_path,
+        fp16=False # CPU 환경 필수
+    )
+    return result["text"]
 
-@app.route('/transcribe', methods=['POST'])
+
+@app.route("/transcribe", methods=["POST"])
 def transcribe():
-    if 'file' not in request.files:
+
+    if "file" not in request.files:
         return jsonify({"error": "No file part"}), 400
 
-    file = request.files['file']
-    if file.filename == '':
+    file = request.files["file"]
+
+    if file.filename == "":
         return jsonify({"error": "No selected file"}), 400
 
-    audio_path = os.path.join('uploads', f"{uuid.uuid4().hex}.wav")
-    os.makedirs('uploads', exist_ok=True)
-    file.save(audio_path)
-
-    future = executor.submit(transcribe_audio, audio_path)
+    audio_path = os.path.join(
+        UPLOAD_DIR,
+        f"{uuid.uuid4().hex}.wav"
+    )
 
     try:
-        text = future.result()  # 여기서 기다리긴 함 (비동기 submit했지만 최종 결과 대기)
-        os.remove(audio_path)
+        file.save(audio_path)
+
+        # 단일 CPU 환경 → 직렬 처리 최적
+        text = transcribe_audio(audio_path)
+
         return jsonify({"result": text}), 200
+
     except Exception as e:
-        os.remove(audio_path)
         return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    finally:
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    return {"status": "ok"}, 200
